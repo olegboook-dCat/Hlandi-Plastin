@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Пластина Хладни</title>
+<meta name="description" content="Песок на звучащей пластине собирается там, где она не движется. Интерактивная модель фигур Хладни со звуком и микрофоном.">
+<meta property="og:title" content="Пластина Хладни">
+<meta property="og:description" content="Песок на звучащей пластине собирается там, где она не движется.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23211C14'/%3E%3Cpath d='M16 4v24M4 16h24' stroke='%23E8DFC8' stroke-width='2'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ground:#14120E;
+  --plate:#211C14;
+  --sand:#E8DFC8;
+  --patina:#6FA88C;
+  --dim:#8A8272;
+  --line:#2E2820;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--ground);
+  color:var(--sand);
+  font-family:"IBM Plex Sans",system-ui,sans-serif;
+  font-size:16px;
+  line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:600px;margin:0 auto;padding:32px 20px 64px}
+header{margin-bottom:28px}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--dim);margin:0 0 10px;
+}
+h1{
+  font-family:"Unbounded",sans-serif;
+  font-weight:300;font-size:30px;line-height:1.15;
+  letter-spacing:-.01em;margin:0 0 12px;
+}
+.lede{color:var(--dim);margin:0;font-size:15px;max-width:46ch}
+
+.plate{
+  position:relative;background:var(--plate);
+  border:1px solid var(--line);border-radius:2px;overflow:hidden;
+}
+canvas{display:block;width:100%}
+.meter{height:2px;background:var(--line);margin-top:2px}
+.meter i{display:block;height:100%;width:0;background:var(--patina);transition:width .08s linear}
+
+.readout{
+  display:flex;justify-content:space-between;align-items:baseline;gap:16px;
+  font-family:"IBM Plex Mono",monospace;font-size:12px;
+  color:var(--dim);padding:12px 2px 0;border-bottom:1px solid var(--line);
+  padding-bottom:12px;
+}
+.readout b{color:var(--sand);font-weight:500}
+.interval{color:var(--patina);text-align:right}
+
+.console{padding-top:20px}
+.ctl{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.ctl label{
+  font-family:"IBM Plex Mono",monospace;font-size:13px;
+  color:var(--dim);width:14px;flex:none;
+}
+.ctl output{
+  font-family:"IBM Plex Mono",monospace;font-size:13px;font-variant-numeric:tabular-nums;
+  width:22px;text-align:right;flex:none;
+}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;flex:1;height:22px;background:none;margin:0;
+}
+input[type=range]::-webkit-slider-runnable-track{height:1px;background:var(--line)}
+input[type=range]::-moz-range-track{height:1px;background:var(--line)}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:14px;height:14px;margin-top:-7px;border-radius:50%;
+  background:var(--sand);cursor:pointer;
+}
+input[type=range]::-moz-range-thumb{
+  width:14px;height:14px;border:none;border-radius:50%;background:var(--sand);cursor:pointer;
+}
+input[type=range]:focus-visible{outline:2px solid var(--patina);outline-offset:4px}
+
+.buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:20px}
+button{
+  font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--sand);background:none;
+  border:1px solid var(--line);border-radius:2px;padding:11px 8px;cursor:pointer;
+  transition:border-color .15s,color .15s;min-height:44px;
+}
+button:hover{border-color:var(--dim)}
+button:focus-visible{outline:2px solid var(--patina);outline-offset:2px}
+button[aria-pressed=true]{border-color:var(--patina);color:var(--patina)}
+.wide{grid-column:1 / -1}
+
+.note{color:var(--dim);font-size:14px;margin-top:14px;min-height:1.4em}
+.note.bad{color:#C97B5A}
+
+.text{margin-top:44px;border-top:1px solid var(--line);padding-top:28px}
+.text h2{
+  font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:500;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin:0 0 12px;
+}
+.text p{margin:0 0 16px;font-size:15px;color:#C9C2AE}
+.text p:last-child{margin-bottom:0}
+.text b{color:var(--sand);font-weight:500}
+footer{
+  margin-top:40px;font-family:"IBM Plex Mono",monospace;
+  font-size:11px;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;
+}
+@media (max-width:420px){
+  h1{font-size:24px}
+  .readout{flex-direction:column;gap:4px}
+  .interval{text-align:left}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <p class="eyebrow">Эрнст Хладни, 1787</p>
+  <h1>Пластина Хладни</h1>
+  <p class="lede">Песок на звучащей пластине сползает туда, где она не движется. Рисунок создаёт не колебание, а его отсутствие.</p>
+</header>
+
+<div class="plate">
+  <canvas id="cv" aria-label="Пластина с песком: точки собираются в узловые линии"></canvas>
+</div>
+<div class="meter"><i id="lvl"></i></div>
+
+<div class="readout">
+  <span><b id="f1">165</b> и <b id="f2">275</b> Гц</span>
+  <span class="interval" id="iv">3:5 — большая секста</span>
+</div>
+
+<div class="console">
+  <div class="ctl">
+    <label for="sm">m</label>
+    <input type="range" id="sm" min="1" max="10" step="1" value="3">
+    <output for="sm" id="vm">3</output>
+  </div>
+  <div class="ctl">
+    <label for="sn">n</label>
+    <input type="range" id="sn" min="1" max="10" step="1" value="5">
+    <output for="sn" id="vn">5</output>
+  </div>
+  <div class="buttons">
+    <button id="bsnd" aria-pressed="false">Включить тон</button>
+    <button id="bmic" aria-pressed="false">Микрофон</button>
+    <button id="rnd" class="wide">Случайная фигура</button>
+  </div>
+  <p class="note" id="note"></p>
+</div>
+
+<div class="text">
+  <h2>Что здесь происходит</h2>
+  <p>Хладни водил смычком по краю металлической пластины, посыпанной песком. Пластина начинала колебаться, но не вся: часть её оставалась почти неподвижной. Песчинки скакали там, где было движение, и застревали на этих неподвижных линиях. Так звук впервые стало видно.</p>
+  <p>Здесь вместо песка семь тысяч точек. Каждая на каждом кадре сдвигается в случайную сторону, и чем сильнее в этом месте колебание, тем длиннее её шаг. Точке некуда деться: рано или поздно она попадает в тихую зону, где шаг почти нулевой, и остаётся там. Никто не рисует линии — они просто единственное место, откуда не выбрасывает.</p>
+  <p><b>m</b> и <b>n</b> задают форму колебания. Тон, который ты слышишь, взят прямо из них: две частоты, 55·m и 55·n герц. Поэтому отношение чисел на экране — это музыкальный интервал в ушах. 3 и 5 дают большую сексту, 4 и 5 — терцию, 7 и 9 — уже что-то неуютное.</p>
+  <p><b>Микрофон</b> отдаёт управление голосу. Громкость трясёт пластину: молчишь — песок оседает, кричишь — всё разлетается. Высота голоса выбирает фигуру. Тон при этом выключается, иначе микрофон услышит его сам и петля разгонит себя до визга. Нужен браузер по адресу https и разрешение на микрофон — его спросят при нажатии.</p>
+</div>
+
+<footer>Узловые линии · открытый исходник</footer>
+
+</div>
+
+<script>
+(function(){
+  var cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+  var PLATE='#211C14',SAND='232,223,200';
+  var dpr=Math.min(window.devicePixelRatio||1,2),S=0;
+  var N=window.innerWidth<520?6000:9000;
+  var px=new Float32Array(N),py=new Float32Array(N);
+  for(var i=0;i<N;i++){px[i]=Math.random();py[i]=Math.random();}
+
+  var m=3,n=5,tm=3,tn=5,PI=Math.PI,energy=0;
+  var pairs=[[1,2],[2,3],[3,4],[2,5],[3,5],[4,5],[3,7],[5,7],[4,9],[5,9],[7,9],[6,10]];
+  var names={'1:1':'унисон','1:2':'октава','2:3':'квинта','3:4':'кварта','4:5':'большая терция',
+    '5:6':'малая терция','3:5':'большая секста','5:8':'малая секста','5:9':'малая септима',
+    '8:9':'большой тон','9:10':'малый тон','4:7':'натуральная септима','5:7':'тритон',
+    '1:3':'октава и квинта','1:4':'две октавы','2:5':'октава и терция','3:8':'октава и кварта',
+    '1:5':'две октавы и терция','3:10':'две октавы и терция','2:7':'октава и септима'};
+
+  var sm=document.getElementById('sm'),sn=document.getElementById('sn');
+  var vm=document.getElementById('vm'),vn=document.getElementById('vn');
+  var f1=document.getElementById('f1'),f2=document.getElementById('f2'),iv=document.getElementById('iv');
+  var note=document.getElementById('note'),lvl=document.getElementById('lvl');
+
+  function gcd(a,b){return b?gcd(b,a%b):a;}
+  function refresh(){
+    vm.textContent=tm;vn.textContent=tn;
+    f1.textContent=Math.round(55*tm);f2.textContent=Math.round(55*tn);
+    var lo=Math.min(tm,tn),hi=Math.max(tm,tn),g=gcd(lo,hi);
+    var key=(lo/g)+':'+(hi/g);
+    iv.textContent=key+(names[key]?' — '+names[key]:' — составной интервал');
+  }
+
+  function resize(){
+    S=cv.clientWidth||320;
+    cv.width=S*dpr;cv.height=S*dpr;cv.style.height=S+'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.fillStyle=PLATE;ctx.fillRect(0,0,S,S);
+  }
+
+  var A=null,osc1=null,osc2=null,master=null,soundOn=false;
+  var micOn=false,analyser=null,stream=null,freqData=null;
+  function actx(){
+    if(!A){A=new (window.AudioContext||window.webkitAudioContext)();}
+    if(A.state==='suspended'){A.resume();}
+    return A;
+  }
+  function startTone(){
+    var a=actx();
+    master=a.createGain();master.gain.value=0;
+    var lp=a.createBiquadFilter();lp.type='lowpass';lp.frequency.value=1800;
+    osc1=a.createOscillator();osc2=a.createOscillator();
+    osc1.type='sine';osc2.type='sine';
+    osc1.frequency.value=55*m;osc2.frequency.value=55*n;
+    var g1=a.createGain(),g2=a.createGain();g1.gain.value=0.5;g2.gain.value=0.4;
+    osc1.connect(g1);osc2.connect(g2);g1.connect(lp);g2.connect(lp);
+    lp.connect(master);master.connect(a.destination);
+    osc1.start();osc2.start();
+    master.gain.setTargetAtTime(0.07,a.currentTime,0.15);
+    soundOn=true;
+  }
+  function stopTone(){
+    if(!soundOn)return;
+    var o1=osc1,o2=osc2;
+    master.gain.setTargetAtTime(0,A.currentTime,0.08);
+    setTimeout(function(){try{o1.stop();o2.stop();}catch(e){}},400);
+    soundOn=false;osc1=null;osc2=null;master=null;
+  }
+
+  var bsnd=document.getElementById('bsnd'),bmic=document.getElementById('bmic');
+  bsnd.addEventListener('click',function(){
+    if(soundOn){
+      stopTone();bsnd.setAttribute('aria-pressed','false');bsnd.textContent='Включить тон';
+    }else{
+      if(micOn)stopMic();
+      startTone();bsnd.setAttribute('aria-pressed','true');bsnd.textContent='Выключить тон';
+    }
+  });
+
+  function stopMic(){
+    if(stream){stream.getTracks().forEach(function(t){t.stop();});}
+    stream=null;analyser=null;micOn=false;energy=0;lvl.style.width='0';
+    bmic.setAttribute('aria-pressed','false');bmic.textContent='Микрофон';
+  }
+  bmic.addEventListener('click',function(){
+    note.className='note';note.textContent='';
+    if(micOn){stopMic();return;}
+    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+      note.className='note bad';
+      note.textContent='Браузер не даёт доступ к микрофону. Обычно так бывает, если страница открыта не по https.';
+      return;
+    }
+    if(soundOn){stopTone();bsnd.setAttribute('aria-pressed','false');bsnd.textContent='Включить тон';}
+    navigator.mediaDevices.getUserMedia({audio:true}).then(function(s){
+      var a=actx();stream=s;
+      var src=a.createMediaStreamSource(s);
+      analyser=a.createAnalyser();analyser.fftSize=2048;analyser.smoothingTimeConstant=0.7;
+      src.connect(analyser);
+      freqData=new Uint8Array(analyser.frequencyBinCount);
+      micOn=true;bmic.setAttribute('aria-pressed','true');bmic.textContent='Слушаю';
+      note.textContent='Говори или пой. В наушниках работает точнее.';
+    }).catch(function(){
+      note.className='note bad';
+      note.textContent='Доступ к микрофону не выдан. Разрешить его можно в настройках сайта — значок слева от адреса.';
+    });
+  });
+
+  function readMic(){
+    if(!analyser)return;
+    analyser.getByteFrequencyData(freqData);
+    var bw=A.sampleRate/analyser.fftSize;
+    var lo=Math.floor(70/bw),hi=Math.floor(1200/bw),best=0,bi=lo,sum=0,cnt=0;
+    for(var k=lo;k<hi;k++){var v=freqData[k];sum+=v;cnt++;if(v>best){best=v;bi=k;}}
+    energy=Math.min(1,(cnt?sum/cnt/255:0)*4);
+    lvl.style.width=Math.round(energy*100)+'%';
+    if(best>110){
+      var p=Math.max(0,Math.min(1,(bi*bw-90)/700));
+      var pr=pairs[Math.min(pairs.length-1,Math.floor(p*pairs.length))];
+      if(pr[0]!==tm||pr[1]!==tn){
+        tm=pr[0];tn=pr[1];sm.value=tm;sn.value=tn;refresh();
+      }
+    }
+  }
+
+  function frame(){
+    if(micOn)readMic();
+    m+=(tm-m)*0.05;n+=(tn-n)*0.05;
+    if(soundOn&&osc1){
+      var t=A.currentTime;
+      osc1.frequency.setTargetAtTime(55*m,t,0.08);
+      osc2.frequency.setTargetAtTime(55*n,t,0.08);
+    }
+    var boost=micOn?(0.25+energy*3.5):1;
+    ctx.fillStyle='rgba(33,28,20,0.16)';ctx.fillRect(0,0,S,S);
+    ctx.fillStyle='rgba('+SAND+',0.5)';
+    for(var k=0;k<N;k++){
+      var x=px[k],y=py[k];
+      var eq=Math.sin(n*PI*x)*Math.sin(m*PI*y)-Math.sin(m*PI*x)*Math.sin(n*PI*y);
+      var amp=(0.0012+Math.abs(eq)*0.03)*boost;
+      var nx=x+(Math.random()-0.5)*amp,ny=y+(Math.random()-0.5)*amp;
+      if(nx<0)nx=0;else if(nx>1)nx=1;
+      if(ny<0)ny=0;else if(ny>1)ny=1;
+      px[k]=nx;py[k]=ny;
+      ctx.fillRect(nx*S,ny*S,1,1);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  sm.addEventListener('input',function(){tm=+sm.value;refresh();});
+  sn.addEventListener('input',function(){tn=+sn.value;refresh();});
+  document.getElementById('rnd').addEventListener('click',function(){
+    var a=1+Math.floor(Math.random()*10),b=1+Math.floor(Math.random()*10);
+    if(b===a)b=1+(b%10);
+    tm=a;tn=b;sm.value=a;sn.value=b;refresh();
+  });
+  window.addEventListener('resize',resize);
+  refresh();resize();frame();
+})();
+</script>
+</body>
+</html>
